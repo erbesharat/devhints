@@ -2,12 +2,14 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"os/user"
 
 	"github.com/fatih/color"
+	"github.com/russross/blackfriday"
 )
 
 func main() {
@@ -27,6 +29,13 @@ func main() {
 	if len(flag.Args()) < 1 {
 		log.Fatalf(color.RedString("Please provide a chatsheet name as a subcommand. Check -all for the list"))
 	}
+	content, err := ioutil.ReadFile(CACHE + "cheatsheets/" + flag.Args()[0] + ".md")
+	if err != nil {
+		log.Fatalf(color.RedString("Couldn't open the cheatsheet file. Error: %e", err))
+	}
+
+	output := blackfriday.MarkdownCommon(content)
+	os.Stdout.Write(output)
 }
 
 func exists(path string) bool {
@@ -40,7 +49,7 @@ func exists(path string) bool {
 func syncCheatSheets(CACHE string) {
 	if exists(CACHE) {
 		cmd := exec.Command("git", []string{"pull", "origin", "master"}...)
-		cmd.Dir = CACHE + "/cheatsheets"
+		cmd.Dir = CACHE + "cheatsheets"
 		if err := cmd.Run(); err != nil {
 			log.Fatalf(color.RedString("Couldn't update the cheatsheets. Error: %s", err.Error()))
 		}
